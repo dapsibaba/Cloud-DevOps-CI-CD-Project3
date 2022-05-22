@@ -183,23 +183,23 @@ jobs:
       - destroy-environment
 
   configure-infrastructure:
-  docker:
-    - image: python:3.7-alpine3.11
-  steps:
-    - checkout
-    - add_ssh_keys:
-        fingerprints: ["45:df:88:a1:d8:8e:02:93:cb:59:37:bb:a6:de:86:a7"] 
-    - attach_workspace:
-        at: ~/
-    - run:
-        name: Install dependencies
-        command: |
-          apk add --update ansible
-    - run:
-        name: Configure server
-        command: |
-          cd .circleci/ansible
-          ansible-playbook -i inventory.txt configure-server.yml
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["45:df:88:a1:d8:8e:02:93:cb:59:37:bb:a6:de:86:a7"]
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible
+      - run:
+          name: Configure server
+          command: |
+            cd .circleci/ansible
+            ansible-playbook -i inventory.txt configure-server.yml
 
   # run-migrations:
   # docker:
@@ -244,6 +244,4 @@ workflows:
           #     only: [test-feature-branch]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
-
-
 # npm audit --audit-level=critical
