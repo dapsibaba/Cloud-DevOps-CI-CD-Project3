@@ -195,12 +195,6 @@ jobs:
             apk add --update ansible
       - attach_workspace:
           at: ~/
-      - run: |
-          if [[ `cat ~/project/.circleci/ansible/inventory.txt | wc -l` == 2 ]]; then
-            echo "It worked!";
-          else
-            echo "Nope!"; exit 1
-          fi
       - run:
           name: Configure server
           command: |
