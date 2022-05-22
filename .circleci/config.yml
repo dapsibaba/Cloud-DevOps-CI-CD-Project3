@@ -176,6 +176,7 @@ jobs:
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filter "Name=tag:project, Values=udapeople" \
               --output text >> inventory.txt
+            cat inventory.txt
 
       - persist_to_workspace:
           root: ~/
@@ -191,18 +192,19 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints: ["45:df:88:a1:d8:8e:02:93:cb:59:37:bb:a6:de:86:a7"]
-      - attach_workspace:
-          at: ~/
       - run:
           name: Install dependencies
           command: |
             apk add --update ansible
+      - attach_workspace:
+          at: ~/
       - run:
           name: Configure server
           command: |
-            cp ~/project/.circleci/ansible/inventory.txt ./.circleci/ansible/inventory.txt
-            cd .circleci/ansible
-            ansible-playbook -i inventory.txt configure-server.yml
+            cat ~/project/.circleci/ansible/inventory.txt
+            cat ./.circle/ansible/inventory.txt
+            cd ./.circleci/ansible
+            ansible-playbook -i ~/project/.circleci/ansible/inventory.txt configure-server.yml
 
   # run-migrations:
   # docker:
