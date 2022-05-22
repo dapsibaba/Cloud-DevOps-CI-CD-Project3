@@ -7,18 +7,16 @@ version: 2.1
 orbs:
   slack: circleci/slack@4.10.1
 
-# commands:
-#   destroy-environment:
-#     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
-#     parameters:
-#       # Add parameter here
-#     steps:
-#       - run:
-#           name: Destroy environments
-#           when: on_fail
-#           command: |
-#             # Your code here
-#             exit 1
+commands:
+  destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    steps:
+      - run:
+          name: Destroy environments
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+            aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
 
 #   revert-migrations:
 #     description: Revert the last migration if successfully run in the current workflow.
@@ -134,9 +132,91 @@ jobs:
             cd backend
             npm install
             npm audit fix --audit-level=critical --force
-            npm audit --audit-level=critical
+
       - slack/notify:
+          channel: $SLACK_DEFAULT_CHANNEL
           event: fail
+          template: basic_fail_1
+
+deploy-infrastructure:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install tar and gzip
+          command: |
+            apt-get update
+            apt-get install tar gzip
+      - run:
+          name: Ensure back-end infrastructure exists
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/backend.yml \
+              --tags project=udapeople \
+              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"  \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  
+      - run:
+          name: Ensure front-end infrastructure exist
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/frontend.yml \
+              --tags project=udapeople \
+              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}" 
+      - run:
+          name: Add back-end ip to ansible inventory
+          command: |
+            aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filter "Name=tag:project, Values=udapeople" \
+              --output text >> inventory.txt
+
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - project/.circleci/ansible/inventory.txt
+
+      - destroy-environment   
+
+  # configure-infrastructure:
+    # docker:
+    #   # Docker image here that supports Ansible
+    # steps:
+    #   # Checkout code from git
+    #   # Add ssh keys with fingerprint
+    #   # attach workspace
+    #   - run:
+    #       name: Install dependencies
+    #       command: |
+    #         # Your code here
+    #         exit 1
+    #   - run:
+    #       name: Configure server
+    #       command: |
+    #         # Your code here
+    #         exit 1
+    #   # Here's where you will add some code to rollback on failure      
+
+  # run-migrations:
+    # docker:
+    #   # Docker image here that supports NodeJS
+    # steps:
+    #   # Checkout code from git
+    #   - run:
+    #       name: Run migrations
+    #       command: |
+    #         # Your code here
+    #         exit 1
+    #   - run:
+    #       name: Send migration results to memstash
+    #       command: |
+    #         # Your code here
+    #         exit 1
+    #  # Here's where you will add some code to rollback on failure      
+
+
+
 
 workflows:
   default:
@@ -144,16 +224,24 @@ workflows:
       - build-frontend
       - build-backend
       - test-frontend:
-          context: SLACK_VARIABLES
           requires:
             - build-frontend
+          context: slack_secrets
       - test-backend:
-          context: SLACK_VARIABLES
+          context: slack_secrets
           requires:
             - build-backend
       - scan-backend:
-          context: SLACK_VARIABLES
           requires: [build-backend]
+          context: slack_secrets
       - scan-frontend:
           requires: [build-frontend]
-          context: SLACK_VARIABLES
+          context: slack_secrets
+      - deploy-infrastructure:
+          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          # filters:
+          #   branches:
+          #     only: [test-feature-branch]
+
+
+# npm audit --audit-level=critical
