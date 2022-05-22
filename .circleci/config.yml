@@ -4,6 +4,9 @@ nodeimage: &nodeimage
 
 version: 2.1
 
+orbs:
+  slack: circleci/slack@4.10.1
+
 # commands:
 #   destroy-environment:
 #     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
@@ -114,6 +117,9 @@ jobs:
             npm install
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
+      # Ensure the "slack/notify" command is the last command in a job to accurately capture the status.
+      - slack/notify:
+          event: fail
 
   scan-backend:
     <<: *nodeimage
@@ -128,7 +134,9 @@ jobs:
             cd backend
             npm install
             npm audit fix --audit-level=critical --force
-
+            npm audit --audit-level=critical
+      - slack/notify:
+          event: fail
 
 workflows:
   default:
@@ -136,12 +144,16 @@ workflows:
       - build-frontend
       - build-backend
       - test-frontend:
+          context: SLACK_VARIABLES
           requires:
             - build-frontend
       - test-backend:
+          context: SLACK_VARIABLES
           requires:
             - build-backend
       - scan-backend:
+          context: SLACK_VARIABLES
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
+          context: SLACK_VARIABLES
