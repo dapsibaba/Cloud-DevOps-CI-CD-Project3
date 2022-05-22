@@ -170,13 +170,10 @@ jobs:
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-            touch inventory.txt 
-            echo [web] > inventory.txt
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filter "Name=tag:project, Values=udapeople" \
-              --output text >> inventory.txt
-            cat inventory.txt
+              --output text >> ~/inventory.txt
 
       - persist_to_workspace:
           root: ~/
@@ -207,8 +204,8 @@ jobs:
       - run:
           name: Configure server
           command: |
-            ansible-playbook .circleci/ansible/configure-server.yml -i ~/project/.circleci/ansible/inventory.txt 
-            cat ~/project/.circleci/ansible/inventory.txt
+            cd .circleci/ansible
+            ansible-playbook -i inventory.txt configure-server.yml
 
   # run-migrations:
   # docker:
@@ -254,3 +251,6 @@ workflows:
       - configure-infrastructure:
           requires: [deploy-infrastructure]
 # npm audit --audit-level=critical
+
+# ansible-playbook .circleci/ansible/configure-server.yml -i ~/project/.circleci/ansible/inventory.txt
+# cat ~/project/.circleci/ansible/inventory.txt
