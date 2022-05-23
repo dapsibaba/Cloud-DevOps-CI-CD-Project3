@@ -1,4 +1,20 @@
 ---
+- name: "host checking stdout"
+  hosts: web
+  register: host_list
+  failed_when: "'no hosts matched' in host_list.stdout_lines"
+
+- name: "host checking stderr"
+  hosts: web
+  register: host_list
+  failed_when: "'no hosts matched' in host_list.stderr_lines"
+
+- name: "number of ip in host"
+  hosts: web
+  ansible.builtin.command: cat ~/project/.circleci/ansible/inventory.txt | wc -l
+  register: command_result
+  failed_when: command_result.stdout != 1
+
 - name: "configuration play."
   hosts: web
   user: ubuntu
@@ -35,3 +51,6 @@
 
   roles:
     - configure-server
+# Gather facts or a 'setup' task will connect to the managed host, run a script that collects a bunch of data, then it will populate the hostvars.
+
+# If you don't gather facts, then those variables will never be collected and set. If you don't actually need the facts for your plays/tasks feel free to skip it. But many roles and plays you will use depend on knowing the OS/release/version and other things that are only detected when gathering facts.
