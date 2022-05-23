@@ -1,19 +1,13 @@
 ---
-- name: "host checking stdout"
-  hosts: web
-  register: host_list
-  failed_when: "'no hosts matched' in host_list.stdout_lines"
-
-- name: "host checking stderr"
-  hosts: web
-  register: host_list
-  failed_when: "'no hosts matched' in host_list.stderr_lines"
-
 - name: "number of ip in host"
   hosts: web
-  ansible.builtin.command: cat ~/project/.circleci/ansible/inventory.txt | wc -l
-  register: command_result
-  failed_when: command_result.stdout != 1
+  tasks:
+    - name: "generating error"
+      command: cat ~/project/.circleci/ansible/inventory.txt | wc -l
+      register: command_result
+      failed_when: >
+        (command_result.stdout < 2) or 
+        (command_result.stdout > 2)
 
 - name: "configuration play."
   hosts: web

@@ -200,11 +200,6 @@ jobs:
           command: |
             cd .circleci/ansible
             ansible-playbook configure-server.yml -i ~/project/.circleci/ansible/inventory.txt
-      - slack/notify:
-          channel: $SLACK_DEFAULT_CHANNEL
-          event: fail
-          template: basic_fail_1
-      - destroy-environment
   # run-migrations:
   # docker:
   #   # Docker image here that supports NodeJS
