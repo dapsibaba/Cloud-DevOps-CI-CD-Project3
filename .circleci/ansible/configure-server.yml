@@ -1,6 +1,7 @@
 ---
 - name: "number of ip in host"
   hosts: web
+  ignore_unreachable: yes
   tasks:
     - name: "generating error"
       command: cat ~/project/.circleci/ansible/inventory.txt | wc -l
@@ -11,6 +12,7 @@
 
 - name: "configuration play."
   hosts: web
+  ignore_unreachable: no
   user: ubuntu
   become: true
   become_method: sudo
