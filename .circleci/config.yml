@@ -7,11 +7,6 @@ pythonalpineimage: &pythonalpineimage
 awsimage: &awsimage
   docker:
     - image: amazon/aws-cli
-parvariables: &param
-  parameters:
-    workflow_id:
-      type: string
-      default: ${CIRCLE_WORKFLOW_ID:0:7}
 
 version: 2.1
 
@@ -154,12 +149,9 @@ jobs:
       #     template: success_tagged_deploy_1
 
   deploy-infrastructure:
-    docker:
-      - image: amazon/aws-cli
-    parameters:
-      workflow_id:
-        type: string
-        default: ${CIRCLE_WORKFLOW_ID:0:7}
+    <<: *awsimage
+    
+    parameters: *parameter
     steps:
       - checkout
       - run:
@@ -209,8 +201,8 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update ansible
-            apk add py3-pip -y
-            pip3 install awscli -y
+            apk add py3-pip
+            pip3 install awscli 
       - attach_workspace:
           at: ~/
       - run:
@@ -302,7 +294,7 @@ jobs:
             apk add --update ansible
             apk add --update npm nodejs
             apk add --update tar gzip 
-            apk add --update aws-cli
+            apk add --update awscli
       - attach_workspace:
           at: ~/
       - run:
@@ -335,7 +327,7 @@ jobs:
             apk update
             apk add --update curl
             apk add --update npm nodejs
-            apk add --update aws-cli
+            apk add --update awscli
       - run:
           name: Get backend url
           command: |
