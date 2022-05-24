@@ -7,7 +7,7 @@ pythonalpineimage: &pythonalpineimage
 awsimage: &awsimage
   docker:
     - image: amazon/aws-cli
-parameters: &parameters
+parvariables: &param
   parameters:
     workflow_id:
       type: string
@@ -21,7 +21,10 @@ orbs:
 commands:
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
-    <<: *parameters
+    parameters: &parameter
+      workflow_id:
+        type: string
+        default: ${CIRCLE_WORKFLOW_ID:0:7}
     steps:
       - run:
           name: Destroy environments
@@ -33,7 +36,7 @@ commands:
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
-    <<: *parameters
+    parameters: *parameter
     steps:
       - run:
           name: Revert migrations
@@ -153,7 +156,7 @@ jobs:
 
   deploy-infrastructure:
     <<: *awsimage
-    <<: *parameters
+    parameters: *parameter
     steps:
       - checkout
       - run:
@@ -223,7 +226,7 @@ jobs:
 
   run-migrations:
     <<: *nodeimage
-    <<: *parameters
+    parameters: *parameter
     steps:
       - checkout
       - restore_cache:
@@ -245,7 +248,7 @@ jobs:
 
   deploy-frontend:
     <<: *awsimage
-    <<: *parameters
+    parameters: *parameter
     steps:
       - checkout
       - run:
@@ -318,7 +321,7 @@ jobs:
   smoke-test:
     docker:
       - image: alpine:latest
-    <<: *parameters
+    parameters: *parameter
     steps:
       - checkout
       - run:
@@ -363,7 +366,7 @@ jobs:
 
   cloudfront-update:
     <<: *awsimage
-    <<: *parameters
+    parameters: *parameter
     steps:
       - checkout
       - run:
