@@ -154,14 +154,17 @@ jobs:
       #     template: success_tagged_deploy_1
 
   deploy-infrastructure:
-    <<: *awsimage
-    parameters: *parameter
+    docker:
+      - image: amazon/aws-cli
+    parameters:
+      workflow_id:
+        type: string
+        default: ${CIRCLE_WORKFLOW_ID:0:7}
     steps:
       - checkout
       - run:
           name: Install tar and gzip
           command: |
-            yum update
             yum install -y tar
             yum install -y gzip
 
