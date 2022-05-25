@@ -68,11 +68,13 @@ jobs:
     <<: *nodeimage
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - backend-build
       - run:
           name: Back-end build
           command: |
             cd backend
-            npm update --depth=5
             npm install
             npm run build
       - save_cache:
@@ -138,7 +140,6 @@ jobs:
             cd backend
             npm install 
             npm audit fix --audit-level=critical --force
-            npm audit --audit-level=critical
       - slack/notify:
           channel: $SLACK_DEFAULT_CHANNEL
           event: fail
@@ -230,6 +231,11 @@ jobs:
       - run:
           name: Run migrations
           command: |
+            apt-get update
+            apt-get install -y python3
+            apt-get install -y python3-pip
+            pip3 install --upgrade pip
+            pip3 install awscli 
             cd backend
             npm install
             npm run migrations > migrations_dump.txt
@@ -240,7 +246,8 @@ jobs:
               curl https://kvdb.io/S2pNPJ8pfJRaimqA4VpNHU/migration_<< parameters.workflow_id >>  -d '1'
             fi
 
-      - revert-migrations    
+      - revert-migrations   
+      - destroy-environment       
 
   deploy-frontend:
     <<: *awsimage
@@ -302,6 +309,7 @@ jobs:
             cd backend
             npm i
             npm run build
+            cp package* ./dist
             cd ..
             tar -C backend -czvf artifact.tar.gz .
             cd .circleci/ansible
