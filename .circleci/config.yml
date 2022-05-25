@@ -138,7 +138,7 @@ jobs:
           name: Scan backend dependencies
           command: |
             cd backend
-            npm install
+            npm install 
             npm audit fix --audit-level=critical --force
       - slack/notify:
           channel: $SLACK_DEFAULT_CHANNEL
@@ -233,7 +233,8 @@ jobs:
           command: |
             cd backend
             npm install
-            npm audit fix --audit-level=critical --force
+            npm install npm-check --global
+            npm-check -u
             npm run migrations > migrations_dump.txt
       - run:
           name: Send migration results to kvdb
