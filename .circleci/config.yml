@@ -234,7 +234,7 @@ jobs:
       - run:
           name: Run migrations
           command: |
-            cd ~/project/backend
+            cd ./backend
             npm install
             npm run migrations > migrations_dump.txt
             cat migrations_dump.txt
@@ -313,6 +313,7 @@ jobs:
             npm run build
             cd ..
             tar -C backend -czvf artifact.tar.gz .
+            ls
             mkdir -p ./.circleci/ansible/roles/deploy/files
             cp -r artifact.tar.gz ./.circleci/ansible/roles/deploy/files/
             cd .circleci/ansible
@@ -345,10 +346,14 @@ jobs:
               --filter "Name=tag:project, Values=udapeople" \
               --output text)
             export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
       - run:
           name: Backend smoke test.
           command: |
             sleep 30s
+            # Fetch and prepare the BACKEND_IP env var
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
             if curl "${API_URL}/api/status" | grep "ok"
             then
               echo "Backend passed smoke test"
@@ -365,7 +370,7 @@ jobs:
             if curl -s ${URL} | grep "Welcome"
             then
               echo "Frontend passed smoke test"
-              return 1
+              return 0
             else
               echo "Frontend failed smoke test"
               return 1
