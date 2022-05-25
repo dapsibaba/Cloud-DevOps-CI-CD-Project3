@@ -12,6 +12,7 @@ version: 2.1
 
 orbs:
   slack: circleci/slack@4.10.1
+  aws-cli: circleci/aws-cli@3.1
 
 commands:
   destroy-environment:
@@ -200,8 +201,7 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update ansible
-            apk add py3-pip
-            pip3 install awscli
+      - aws-cli/setup
       - attach_workspace:
           at: ~/
       - run:
@@ -228,27 +228,23 @@ jobs:
       - restore_cache:
           keys:
             - backend-build      
-      - run:
-          name: Install dependencies
-          command: |
-            sudo apt-get -qq update
-            sudo apt-get install -y -qq python3
-            sudo apt-get install -y python3-pip
-            pip3 install --upgrade pip
-            sudo apt-get clean
-            pip3 --no-cache-dir install --upgrade awscli
+      - aws-cli/setup
       - run:
           name: Run migrations
           command: |
-            cd backend
+            cd ~/project/backend
             npm install
             npm run migrations > migrations_dump.txt
+            cat migrations_dump.txt
       - run:
           name: Send migration results to kvdb
           command: |
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt 
             then
               curl https://kvdb.io/S2pNPJ8pfJRaimqA4VpNHU/migration_<< parameters.workflow_id >>  -d '1'
+              echo "Migration succeeded"
+            else 
+              echo "Migration failed"
             fi
 
       - revert-migrations
@@ -262,14 +258,10 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            sudo apt-get -qq update
-            sudo apt-get install -y -qq python3
-            sudo apt-get install -y -qq python3-pip
-            pip3 install --upgrade pip
-            sudo apt-get clean
-            pip3 --no-cache-dir install --upgrade awscli 
+            sudo apt-get -qq update 
             sudo apt-get install -y -qq tar gzip  
             sudo apt-get install -y -qq curl
+      - aws-cli/setup
       - run:
           name: Get backend url
           command: |
@@ -308,19 +300,18 @@ jobs:
             apk add --update npm nodejs
             apk add --update tar gzip 
             apk add curl
-            apk add py3-pip
-            pip3 install awscli
       - attach_workspace:
           at: ~/
+      - aws-cli/setup
       - run:
           name: Deploy backend
           command: |
-            cd backend
+            mkdir -p ./.circleci/ansible/roles/deploy/files
+            cd ./backend
             npm i
             npm run build
-            cp package* ./dist
             cd ..
-            tar -C backend -czvf artifact.tar.gz .
+            tar -C ./.circleci/ansible/roles/deploy/files -czvf artifact.tar.gz .
             cd .circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
@@ -336,13 +327,13 @@ jobs:
     parameters: *parameter
     steps:
       - checkout
+      - aws-cli/setup
       - run:
           name: Install dependencies
           command: |
             apk update
             apk add --update curl
             apk add --update npm nodejs
-            apk add --update awscli
       - run:
           name: Get backend url
           command: |
@@ -356,8 +347,10 @@ jobs:
           command: |
             if curl "${API_URL}/api/status" | grep "ok"
             then
+              echo "Backend passed smoke test"
               return 0
             else
+              echo "Backend failed smoke test"
               return 1
             fi
       - run:
@@ -367,8 +360,10 @@ jobs:
             echo ${URL} 
             if curl -s ${URL} | grep "Welcome"
             then
-              return 1 
+              echo "Frontend passed smoke test"
+              return 1
             else
+              echo "Frontend failed smoke test"
               return 1
             fi
       # Here's where you will add some code to rollback on failure
@@ -431,9 +426,9 @@ workflows:
           context: slack_secrets
       - deploy-infrastructure:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-          # filters:
-          #   branches:
-          #     only: [test-feature-branch]
+          filters:
+            branches:
+              only: [main]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
       - run-migrations:
