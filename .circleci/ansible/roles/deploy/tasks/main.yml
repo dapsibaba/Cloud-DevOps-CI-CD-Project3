@@ -19,11 +19,12 @@
   file:
     path: ~/web
     state: directory
+    mode: 0755
 
 - name: unarchive from the local into the remote server
   become: true
   unarchive:
-    src: "~/project/backend/artifact.tar.gz"
+    src: "~/project/artifact.tar.gz"
     dest: "~/web"
     remote_src: no
 
@@ -36,4 +37,4 @@
     cd dist
     pm2 start main.js --update-env
 
-# pm2 start ~/web/index.js -f
+
