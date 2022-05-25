@@ -246,7 +246,7 @@ jobs:
       - run:
           name: Send migration results to kvdb
           command: |
-            if [[grep -q "has been executed successfully." migrations_dump.txt]]; then
+            if [ grep -q "has been executed successfully." migrations_dump.txt ]; then
               curl https://kvdb.io/S2pNPJ8pfJRaimqA4VpNHU/migration_<< parameters.workflow_id >>  -d '1'
             fi
 
@@ -261,11 +261,11 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            yum update
             yum install -y python3
             yum install -y npm
             yum install -y nodejs  
-            yum install -y tar gzip  
+            yum install -y tar
+            yum install -y gzip  
             yum install -y curl
       - run:
           name: Get backend url
@@ -304,7 +304,9 @@ jobs:
             apk add --update ansible
             apk add --update npm nodejs
             apk add --update tar gzip 
-            apk add --update awscli
+            apk add curl
+            apk add py3-pip
+            pip3 install awscli
       - attach_workspace:
           at: ~/
       - run:
