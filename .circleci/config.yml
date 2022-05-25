@@ -225,9 +225,6 @@ jobs:
     parameters: *parameter
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - backend-build
       - run:
           name: Install dependencies
           command: |
@@ -235,13 +232,15 @@ jobs:
             sudo apt-get install -y python3
             sudo apt-get install -y python3-pip
             pip3 install --upgrade pip
-            pip3 install awscli
+            sudo apt-get clean
+            pip3 --no-cache-dir install --upgrade awscli
       - run:
           name: Run migrations
           command: |
             cd backend
+            npm cache clean -f
             npm install
-            npm audit fix --audit-level=critical
+            npm audit fix
             npm run migrations > migrations_dump.txt
       - run:
           name: Send migration results to kvdb
@@ -446,3 +445,6 @@ workflows:
       #     requires: [cloudfront-update]
 
       #line 356 Change this to 0 after the job fails
+      # - restore_cache:
+      #     keys:
+      #       - backend-build
