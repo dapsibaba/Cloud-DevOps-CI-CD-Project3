@@ -11,6 +11,9 @@ awsimage: &awsimage
 version: 2.1
 
 orbs:
+  aws-cli: circleci/aws-cli@2.0.3
+
+orbs:
   slack: circleci/slack@4.10.1
 
 commands:
@@ -75,6 +78,7 @@ jobs:
           name: Back-end build
           command: |
             cd backend
+            npm update --depth=5
             npm install
             npm run build
       - save_cache:
@@ -140,6 +144,7 @@ jobs:
             cd backend
             npm install 
             npm audit fix --audit-level=critical --force
+            npm audit --audit-level=critical
       - slack/notify:
           channel: $SLACK_DEFAULT_CHANNEL
           event: fail
@@ -228,13 +233,15 @@ jobs:
       - restore_cache:
           keys:
             - backend-build
+      - aws-cli/install
       - run:
           name: Run migrations
           command: |
             cd backend
             npm install
+            npm audit fix --audit-level=critical --force
             npm install npm-check --global
-            npm-check -u
+            npm-check --update-all
             npm run migrations > migrations_dump.txt
       - run:
           name: Send migration results to kvdb
@@ -242,7 +249,9 @@ jobs:
             if [[grep -q "has been executed successfully." migrations_dump.txt]]; then
               curl https://kvdb.io/S2pNPJ8pfJRaimqA4VpNHU/migration_<< parameters.workflow_id >>  -d '1'
             fi
+
       - revert-migrations
+      - destroy-environment      
 
   deploy-frontend:
     <<: *awsimage
