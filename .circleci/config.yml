@@ -44,6 +44,8 @@ commands:
               cd ~/project/backend
               npm install
               npm run migration:revert
+            else
+              echo "No reverting is going on as no migration was done"
             fi
 
 jobs:
@@ -227,7 +229,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - backend-build      
+            - backend-build
       - aws-cli/setup
       - run:
           name: Run migrations
@@ -306,12 +308,13 @@ jobs:
       - run:
           name: Deploy backend
           command: |
-            mkdir -p ./.circleci/ansible/roles/deploy/files
-            cd ./backend
+            cd backend
             npm i
             npm run build
             cd ..
-            tar -C ./.circleci/ansible/roles/deploy/files -czvf artifact.tar.gz .
+            tar -C backend -czvf artifact.tar.gz .
+            mkdir -p ./.circleci/ansible/roles/deploy/files
+            cp -r artifact.tar.gz ./.circleci/ansible/roles/deploy/files/
             cd .circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
@@ -345,6 +348,7 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
+            sleep 30s
             if curl "${API_URL}/api/status" | grep "ok"
             then
               echo "Backend passed smoke test"
@@ -386,24 +390,37 @@ jobs:
               --tags project=udapeople
       # Here's where you will add some code to rollback on failure
 
-# cleanup:
-#     docker:
-#       # Docker image here
-#     steps:
-#       - checkout
-#       - run:
-#           name: Get old stack workflow id
-#           command: |
-#             # your code here
-#             export OldWorkflowID="the id here"
-#             export STACKS=[] #put the list of stacks here
-#       - run:
-#           name: Remove old stacks and files
-#           command: |
-#             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
-#             then
-#               # your code here
-#             fi
+  cleanup:
+    <<: *awsimage
+    parameters: *parameter
+    steps:
+      - checkout
+      - aws-cli/setup
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Get old stack workflow id, remove old stacks and files
+          command: |
+            # Fetch the old workflow ID
+            export OldWorkflowID=$(aws cloudformation \
+              list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+              --no-paginate --output text)
+            echo OldWorkflowID: "${OldWorkflowID}"
+            echo "CIRCLE_WORKFLOW_ID << parameters.workflow_id >>"   
+            # Fetch the stack names      
+            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+              --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
+            echo Stack names: "${STACKS[@]}" 
+            # Ensure OldWorkflowID is not null
+            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" && ! -z $OldWorkflowID ]]
+            then
+              echo "Destroying AWS resources from old workflow (${OldWorkflowID})"
+              aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
+              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+            else
+              echo "No stacks from old worklfow (${OldWorkflowID}) found; no cleanup necessary"
+            fi
 
 workflows:
   default:
@@ -441,8 +458,7 @@ workflows:
           requires: [deploy-backend, deploy-frontend]
       - cloudfront-update:
           requires: [smoke-test]
-      # - cleanup:
-      #     requires: [cloudfront-update]
+      - cleanup:
+          requires: [cloudfront-update]
 
       #line 356 Change this to 0 after the job fails
-
