@@ -234,7 +234,7 @@ jobs:
       - run:
           name: Run migrations
           command: |
-            cd ./backend
+            cd backend
             npm install
             npm run migrations > migrations_dump.txt
             cat migrations_dump.txt
@@ -347,7 +347,7 @@ jobs:
               --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
-            sleep 30s
+            sleep 240
             if curl "${API_URL}/api/status" | grep "ok"
             then
               echo "Backend passed smoke test"
@@ -413,12 +413,12 @@ jobs:
             # Ensure OldWorkflowID is not null
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" && ! -z $OldWorkflowID ]]
             then
-              echo "Destroying AWS resources from old workflow (${OldWorkflowID})"
+               # Remove old workflow
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
               aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
             else
-              echo "No stacks from old worklfow (${OldWorkflowID}) found; no cleanup necessary"
+              echo "No old stack: ${OldWorkflowID} found"
             fi
 
 workflows:
