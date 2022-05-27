@@ -203,7 +203,9 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update ansible
-      - aws-cli/setup
+            apk add py3-pip
+            pip3 -U paramiko
+            pip3 install awscli
       - attach_workspace:
           at: ~/
       - run:
@@ -220,7 +222,6 @@ jobs:
           command: |
             cd .circleci/ansible
             cat inventory.txt
-            # pip3 -U paramiko
             ansible-playbook configure-server.yml -i inventory.txt
 
       - destroy-environment
