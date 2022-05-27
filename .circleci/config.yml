@@ -1,6 +1,6 @@
 nodeimage: &nodeimage
   docker:
-    - image: circleci/node:13.8.0
+    - image: cimg/node:13.8.0
 pythonalpineimage: &pythonalpineimage
   docker:
     - image: python:3.7-alpine3.11
