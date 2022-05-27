@@ -3,7 +3,7 @@ nodeimage: &nodeimage
     - image: cimg/node:13.8.0
 pythonalpineimage: &pythonalpineimage
   docker:
-    - image: python:3.7-alpine3.11
+    - image: python:3.9-alpine3.15
 awsimage: &awsimage
   docker:
     - image: amazon/aws-cli
@@ -220,8 +220,7 @@ jobs:
           command: |
             cd .circleci/ansible
             cat inventory.txt
-            cat ~/project/.circleci/ansible/inventory.txt
-            ansible-playbook configure-server.yml -i ~/project/.circleci/ansible/inventory.txt
+            ansible-playbook configure-server.yml -i inventory.txt
 
       - destroy-environment
 
