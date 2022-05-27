@@ -198,7 +198,7 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprints: ["45:df:88:a1:d8:8e:02:93:cb:59:37:bb:a6:de:86:a7"]
+          fingerprints: ["67:e3:9b:88:64:18:28:88:ad:3d:c7:21:df:22:9e:e2"]
       - run:
           name: Install dependencies
           command: |
@@ -219,6 +219,8 @@ jobs:
           no_output_timeout: 15m
           command: |
             cd .circleci/ansible
+            cat inventory.txt
+            cat ~/project/.circleci/ansible/inventory.txt
             ansible-playbook configure-server.yml -i ~/project/.circleci/ansible/inventory.txt
 
       - destroy-environment
@@ -294,7 +296,7 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprints: ["45:df:88:a1:d8:8e:02:93:cb:59:37:bb:a6:de:86:a7"]
+          fingerprints: ["67:e3:9b:88:64:18:28:88:ad:3d:c7:21:df:22:9e:e2"]
       - run:
           name: Install dependencies
           command: |
