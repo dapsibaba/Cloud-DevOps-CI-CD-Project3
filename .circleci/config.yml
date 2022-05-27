@@ -204,7 +204,6 @@ jobs:
           command: |
             apk add --update ansible
             apk add py3-pip
-            pip3 --upgrade paramiko
             pip3 install awscli
       - attach_workspace:
           at: ~/
