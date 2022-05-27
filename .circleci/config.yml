@@ -216,6 +216,7 @@ jobs:
             fi
       - run:
           name: Configure server
+          no_output_timeout: 15m
           command: |
             cd .circleci/ansible
             ansible-playbook configure-server.yml -i ~/project/.circleci/ansible/inventory.txt
@@ -340,6 +341,7 @@ jobs:
             apk add --update npm nodejs
       - run:
           name: Get backend url and Backend smoke test.
+          no_output_timeout: 15m
           command: |
             export BACKEND_IP=$(aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
