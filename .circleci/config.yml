@@ -39,7 +39,9 @@ commands:
           when: on_fail
           command: |
             SUCCESS=$(curl --insecure  https://kvdb.io/S2pNPJ8pfJRaimqA4VpNHU/migration_<< parameters.workflow_id >>)
+            echo $SUCCESS
             if [ "$SUCCESS" -eq 1 ]; then
+              echo 'screaaammmmmmm'
               cd ~/project/backend
               npm install
               npm run migration:revert
@@ -158,9 +160,7 @@ jobs:
       - run:
           name: Install tar and gzip
           command: |
-            yum install -y tar
-            yum install -y gzip
-
+            yum install -y tar gzip
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -189,6 +189,8 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
+      - slack/notify:
+          event: fail
 
       - destroy-environment
 
@@ -208,10 +210,10 @@ jobs:
       - run:
           name: investigating inventory list
           command: |
-            if [[ `cat ~/project/.circleci/ansible/inventory.txt | wc -l` == 2 ]]; then
-              cat ~/project/.circleci/ansible/inventory.txt;
+            if [[ `cat .circleci/ansible/inventory.txt | wc -l` == 2 ]]; then
+              cat .circleci/ansible/inventory.txt;
             else
-              cat ~/project/.circleci/ansible/inventory.txt; exit 1
+              cat .circleci/ansible/inventory.txt; exit 1
             fi
       - run:
           name: Configure server
@@ -233,23 +235,23 @@ jobs:
             - backend-build
       - aws-cli/setup
       - run:
-          name: Run migrations
+          name: Run migrations and save status into a text
           command: |
             cd backend
             npm install
-            curl -k https://kvdb.io/S2pNPJ8pfJRaimqA4VpNHU/migration_<< parameters.workflow_id >>  -d '1'
-            # npm run migrations > migrations_dump.txt
-            # cat migrations_dump.txt
-      # - run:
-      #     name: Save migration result into a text 
-      #     command: |
-      #       if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt 
-      #       then
-      #         echo "Migration succeeded"
-      #         curl -k https://kvdb.io/S2pNPJ8pfJRaimqA4VpNHU/migration_<< parameters.workflow_id >>  -d '1'
-      #       else 
-      #         echo "Migration failed"
-      #       fi
+            npm run migrations > migrations_dump.txt
+            cat migrations_dump.txt
+      - run:
+          name: Check if migration succeeded 
+          command: |
+            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt 
+            then
+              echo "Migration succeeded"
+              # curl --insecure or curl -k
+              curl -k https://kvdb.io/S2pNPJ8pfJRaimqA4VpNHU/migration_<< parameters.workflow_id >>  -d '1'
+            else 
+              echo "Migration failed"
+            fi
 
       - revert-migrations
       - destroy-environment
@@ -264,7 +266,7 @@ jobs:
           command: |
             sudo apt-get -qq update 
             sudo apt-get install -y -qq tar gzip  
-            sudo apt-get install -y -qq curl
+            # sudo apt-get install -y -qq curl
       - aws-cli/setup
       - run:
           name: Get backend url
@@ -305,7 +307,7 @@ jobs:
             apk add --update ansible
             apk add --update npm nodejs
             apk add --update tar gzip 
-            apk add curl
+            # apk add curl
 
       - aws-cli/setup
       - run:
@@ -341,7 +343,7 @@ jobs:
             apk add --update curl
             apk add --update npm nodejs
       - run:
-          name: Get backend url and Backend smoke test.
+          name: Get backend url and do backend smoke test.
           no_output_timeout: 15m
           command: |
             export BACKEND_IP=$(aws ec2 describe-instances \
@@ -373,9 +375,9 @@ jobs:
               return 1
             fi
       # Here's where you will add some code to rollback on failure
-      # - revert-migrations
+      - revert-migrations
 
-      # - destroy-environment
+      - destroy-environment
 
   cloudfront-update:
     <<: *awsimage
@@ -397,7 +399,10 @@ jobs:
     parameters: *parameter
     steps:
       - checkout
-      - aws-cli/setup
+      - run: #Workspace attachment needs tar which is not in awsimage https://www.youtube.com/watch?v=RhkaSfBlqCk 
+          name: Install tar and gzip.
+          command: |
+            yum install -y tar gzip      
       - attach_workspace:
           at: ~/
       - run:
