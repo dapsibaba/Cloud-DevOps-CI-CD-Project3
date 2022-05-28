@@ -18,7 +18,7 @@
 - name: create backend directory
   become: true
   file:
-    path: ~/backend
+    path: ~/web
     state: directory
     mode: 0755
 
@@ -26,13 +26,13 @@
   become: true
   copy:
     src: artifact.tar.gz
-    dest: /home/ubuntu
+    dest: ~/web
 
 - name: "Unarchive the copied tar file"
   become: true
   unarchive:
     src: artifact.tar.gz
-    dest: /home/ubuntu
+    dest: ~/web
 
 - name: "install dependencies."
   become: true
@@ -41,15 +41,8 @@
     state: latest
     update_cache: yes
 
-- name: "install pm2"
-  become: true
-  npm:
-    name: pm2
-    global: yes
-    production: yes
-    state: present
-
 - name: "Run pm2"
   become: true
   shell:
     cmd: "pm2 stop default || pm2 start npm -- start"
+    chdir: ~/web/
