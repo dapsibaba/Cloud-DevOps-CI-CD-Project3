@@ -26,13 +26,13 @@
   become: true
   copy:
     src: artifact.tar.gz
-    dest: ~/backend/artifact.tar.gz
+    dest: /home/ubuntu
 
 - name: "Unarchive the copied tar file"
   become: true
   unarchive:
     src: artifact.tar.gz
-    dest: ~/backend
+    dest: /home/ubuntu
 
 - name: "install dependencies."
   become: true
@@ -53,4 +53,3 @@
   become: true
   shell:
     cmd: "pm2 stop default || pm2 start npm -- start"
-    chdir: ~/backend/
