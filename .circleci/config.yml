@@ -39,8 +39,7 @@ commands:
           when: on_fail
           command: |
             SUCCESS=$(curl --insecure  https://kvdb.io/S2pNPJ8pfJRaimqA4VpNHU/migration_<< parameters.workflow_id >>)
-            if (($SUCCESS == 1));
-            then
+            if [ "$SUCCESS" -eq 1 ]; then
               cd ~/project/backend
               npm install
               npm run migration:revert
@@ -184,7 +183,7 @@ jobs:
             aws ec2 describe-instances \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filter "Name=tag:project, Values=udapeople" \
-              --output text >> ~/project/.circleci/ansible/inventory.txt
+              --output text >> .circleci/ansible/inventory.txt
 
       - persist_to_workspace:
           root: ~/
@@ -203,8 +202,7 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update ansible
-            apk add py3-pip
-            pip3 install awscli
+            pip install awscli
       - attach_workspace:
           at: ~/
       - run:
@@ -287,10 +285,10 @@ jobs:
             npm run build
             tar -czvf artifact-"<< parameters.workflow_id >>".tar.gz dist
             aws s3 cp dist s3://udapeople-<< parameters.workflow_id >> --recursive
-
+ 
+      - destroy-environment
       - revert-migrations
 
-      - destroy-environment
 
   deploy-backend:
     <<: *pythonalpineimage
@@ -298,6 +296,8 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints: ["67:e3:9b:88:64:18:28:88:ad:3d:c7:21:df:22:9e:e2"]
+      - attach_workspace:
+          at: ~/          
       - run:
           name: Install dependencies
           command: |
@@ -306,8 +306,7 @@ jobs:
             apk add --update npm nodejs
             apk add --update tar gzip 
             apk add curl
-      - attach_workspace:
-          at: ~/
+
       - aws-cli/setup
       - run:
           name: Deploy backend
@@ -325,9 +324,8 @@ jobs:
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
       # you have to be outside a file to tar it. czvf tars everything into the backend folder
-      - revert-migrations
-
       - destroy-environment
+      - revert-migrations      
 
   smoke-test:
     docker:
