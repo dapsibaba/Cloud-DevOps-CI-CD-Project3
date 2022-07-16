@@ -40,10 +40,11 @@ commands:
           command: |
             SUCCESS=$(curl --insecure  https://kvdb.io/S2pNPJ8pfJRaimqA4VpNHU/migration_<< parameters.workflow_id >>)
             echo $SUCCESS
-            if [ "$SUCCESS" -eq 0 ]; then
+            if [ "$SUCCESS" -eq 1 ]; then
+              echo 'success'
               cd ~/project/backend
               npm install
-              npm run migration:revert
+              npm run migrations:revert
             else
               echo "No reverting is going on as no migration was done"
             fi
@@ -368,16 +369,15 @@ jobs:
             if curl -s ${URL} | grep "Welcome"
             then
               echo "Frontend passed smoke test"
-              return 1
+              return 0
             else
               echo "Frontend failed smoke test"
               return 1
             fi
       # Here's where you will add some code to rollback on failure
-      - destroy-environment
       - revert-migrations
 
-
+      - destroy-environment
 
   cloudfront-update:
     <<: *awsimage
@@ -426,7 +426,7 @@ jobs:
               aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
               aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
             else
-              echo "No old stack. the only one found is ${OldWorkflowID}"
+              echo "No old stack. the current one found is ${OldWorkflowID}"
             fi
 
 workflows:
