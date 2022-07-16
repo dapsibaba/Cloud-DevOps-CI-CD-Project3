@@ -384,6 +384,10 @@ jobs:
     parameters: *parameter
     steps:
       - checkout
+      - run: #Workspace attachment needs tar which is not in awsimage https://www.youtube.com/watch?v=RhkaSfBlqCk 
+          name: Install tar.
+          command: |
+            yum install -y tar   
       - run:
           name: Update cloudfront distribution
           command: |
@@ -407,6 +411,14 @@ jobs:
           paths:
             - project/OldWorkflowID.txt
       # Here's where you will add some code to rollback on failure
+      - run:
+          name: Empty s3 bucket 
+          when: on_fail
+          command: |
+            echo "Emptying S3 bucket: s3://udapeople-<< parameters.workflow_id >>"
+            aws s3 rm s3://udapeople-<< parameters.workflow_id >> --recursive 
+
+      - destroy-environment
 
   cleanup:
     <<: *awsimage
