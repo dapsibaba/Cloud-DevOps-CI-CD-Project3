@@ -48,7 +48,16 @@ commands:
             else
               echo "No reversion happening"
             fi
-
+  empty-bucket:
+    description: on failure empty the created s3 bucket in this workflow
+    parameters: *parameter
+    steps:
+      - run:
+          name: Empty S3 bucket 
+          when: on_fail
+          command: |
+            echo "Emptying S3 bucket: s3://udapeople-<< parameters.workflow_id >>"
+            aws s3 rm s3://udapeople-<< parameters.workflow_id >> --recursive --quiet
 jobs:
   build-frontend:
     <<: *nodeimage
@@ -366,8 +375,8 @@ jobs:
               return 1
             fi
       # Here's where you will add some code to rollback on failure
+      - empty-bucket
       - revert-migrations
-
       - destroy-environment
 
   cloudfront-update:
@@ -404,13 +413,7 @@ jobs:
           paths:
             - OldWorkflowID.txt
       # Here's where you will add some code to rollback on failure
-      - run:
-          name: Empty S3 bucket 
-          when: on_fail
-          command: |
-            echo "Emptying S3 bucket: s3://udapeople-<< parameters.workflow_id >>"
-            aws s3 rm s3://udapeople-<< parameters.workflow_id >> --recursive --quiet
-
+      - empty-bucket
       - destroy-environment
       - revert-migrations  
 
