@@ -387,6 +387,8 @@ jobs:
           name: Install tar and gzip.
           command: |
             yum install -y tar gzip 
+            curl -sL https://rpm.nodesource.com/setup_lts.x | bash -
+            yum -y install nodejs
       - run:
           name: Update cloudfront distribution
           command: |
@@ -408,7 +410,7 @@ jobs:
       - persist_to_workspace:
           root: ~/
           paths:
-            - project/OldWorkflowID.txt
+            - OldWorkflowID.txt
       # Here's where you will add some code to rollback on failure
       - run:
           name: Empty S3 bucket 
