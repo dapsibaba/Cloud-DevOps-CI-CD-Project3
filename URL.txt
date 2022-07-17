@@ -1,4 +1,5 @@
 Github url: https://github.com/dapsibaba/Cloud-DevOps-CI-CD-Project3
-s3 website endpoint: http://udapeople-6eb2780.s3-website-us-east-1.amazonaws.com
+s3 website endpoint: http://udapeople-b04e3aa.s3-website-us-east-1.amazonaws.com
 cloudfront domain name: https://d3advcrr2vpx5b.cloudfront.net
-backend url: http://ec2-52-55-241-221.compute-1.amazonaws.com:3030/api/status
+backend url: http://ec2-3-91-95-170.compute-1.amazonaws.com:3030/api/status
+prometheus url: http://ec2-44-202-27-136.compute-1.amazonaws.com:9090/targets
