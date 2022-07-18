@@ -402,7 +402,7 @@ jobs:
 
             aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
-              --stack-name udapeople-initial-cloudfront-stack \
+              --stack-name udapeople-cloudfront-stack \
               --parameter-overrides WorkflowID="<< parameters.workflow_id >>" \
               --tags project=udapeople
             
